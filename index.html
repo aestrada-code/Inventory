@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Searchable Chemical Inventory for the High School Science Department.">
+<title>Chemical Inventory | HS Science</title>
+<style>
+:root{--navy:#142b4a;--blue:#245b8f;--ink:#182433;--muted:#66758a;--line:#dbe3ec;--bg:#f4f7fb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,#142b4a,#245b8f);color:#fff;padding:32px clamp(18px,4vw,54px)}
+.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.76rem;font-weight:700;color:#c9dced}
+h1{margin:.35rem 0;font-size:clamp(1.9rem,4vw,2.8rem);line-height:1.12}header p{max-width:850px;color:#e0eaf4;margin:.7rem 0 0}
+main{max-width:1500px;margin:auto;padding:22px clamp(12px,2.5vw,32px) 50px}
+.summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}.pill{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;min-width:155px}.pill strong{display:block;color:var(--navy);font-size:1.4rem}.pill span{color:var(--muted);font-size:.84rem}
+.controls{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr) minmax(140px,1fr);gap:12px}
+label{display:block;font-size:.8rem;color:var(--muted);font-weight:700;margin-bottom:5px}
+input,select{font:inherit;width:100%;padding:11px 12px;border:1px solid #cbd6e2;border-radius:9px;background:#fff;color:var(--ink)}
+.notice{font-size:.85rem;color:var(--muted);margin:0 0 14px}
+.table-wrap{background:transparent;border:0;border-radius:14px;overflow:hidden}
+.table-head{padding:14px 2px;display:flex;justify-content:space-between;align-items:center;gap:12px}h2{font-size:1.05rem;margin:0;color:var(--navy)}#resultCount{font-size:.88rem;color:var(--muted)}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:14px;align-items:stretch}
+.chemical-card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 2px 7px #142b4a0a;display:flex;flex-direction:column;min-width:0}
+.card-title{background:#eef3f8;padding:13px 15px;border-bottom:1px solid var(--line)}.card-title strong{display:block;color:var(--navy);font-size:1rem;overflow-wrap:anywhere}.card-title span{display:block;color:var(--muted);font-size:.8rem;margin-top:3px}
+.card-fields{padding:8px 15px 12px;display:grid;grid-template-columns:minmax(90px, .8fr) minmax(0,1.4fr);gap:0 10px}
+.field-name,.field-value{padding:8px 0;border-bottom:1px solid #edf1f5;overflow-wrap:anywhere;min-width:0}.field-name{font-size:.75rem;color:var(--muted);font-weight:700}.field-value{font-size:.88rem}.field-name:last-of-type,.field-value:last-child{border-bottom:0}
+a{color:#175d9a;text-decoration:underline;text-underline-offset:2px}a:hover{color:#0c3761}.empty{padding:34px;text-align:center;color:var(--muted)}
+footer{color:var(--muted);font-size:.82rem;margin:15px 2px}
+@media(max-width:720px){.controls{grid-template-columns:1fr}.table-head{align-items:flex-start;flex-direction:column}.card-grid{grid-template-columns:1fr}.card-fields{grid-template-columns:minmax(85px,.8fr) minmax(0,1.4fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">HS Science Department · Inventory Section 01</div>
+  <h1>Chemical Inventory</h1>
+  <p>Search and browse the department’s chemical inventory. Use the filters to locate entries and open available linked resources from the original spreadsheet.</p>
+</header>
+<main>
+  <section class="summary">
+    <div class="pill"><strong id="recordTotal">—</strong><span>Chemical inventory records</span></div>
+    <div class="pill"><strong id="linkTotal">—</strong><span>Clickable links</span></div>
+  </section>
+  <section class="controls" aria-label="Search and filters">
+    <div><label for="search">Search chemicals</label><input id="search" type="search" placeholder="Search name, formula, location, or any field…"></div>
+    <div><label for="fieldFilter">Search within a field</label><select id="fieldFilter"><option value="">All fields</option></select></div>
+    <div><label for="linkFilter">Link status</label><select id="linkFilter"><option value="all">All records</option><option value="linked">With links</option><option value="unlinked">Without links</option></select></div>
+  </section>
+  <p class="notice">Safety reminder: verify the container label, current Safety Data Sheet (SDS), and applicable Hazcard before handling or disposing of any chemical. This inventory is a reference, not a substitute for approved safety procedures.</p>
+  <section class="table-wrap">
+    <div class="table-head"><h2>Inventory records</h2><span id="resultCount" aria-live="polite"></span></div>
+    <div id="tableContainer"><div class="empty">Loading inventory…</div></div>
+  </section>
+  <footer>Data extracted from the “Chemical Inventory” sheet of the supplied workbook. Original spreadsheet hyperlinks and plain URLs are retained where available.</footer>
+</main>
+<script src="inventory-data.js"></script>
+<script>
+(() => {
+  const sheet=(window.INVENTORY_DATA||[])[0];
+  const $=id=>document.getElementById(id);
+  if(!sheet){$('tableContainer').textContent='Inventory data could not be loaded.';return;}
+  const search=$('search'), fieldFilter=$('fieldFilter'), linkFilter=$('linkFilter');
+  const val=c=>c.value===null||c.value===undefined?'':String(c.value);
+  // Match the Google Apps Script behavior: link only verified, single Hazcard labels.
+  const HAZCARDS_WEB_URL='https://aestrada-code.github.io/Hazcards.-References/';
+  const HAZCARD_LABELS=new Set((
+    '3B,3D,4A,4B,4C,6,7,8,9A,9B,9C,10A,10B,11,13A,13B,13C,14A,15B,16,18,19A,19B,19C,19D,24,25,26,27A,27B,27C,28,32,36A,37A,38A,38B,38C,38D,39,40A,40B,40C,43A,45A,45B,45C,46A,47A,47B,52,54,55A,55B,55C,56,57A,58A,58B,59A,59B,60,61,63,65B,69,70A,72,76,77,78A,78B,78C,79,80,81,82,83,84A,84B,84C,85A,87,88,91A,91B,92,95A,95B,95C,96A,98A,98B,102A,104,107,108A,108B'
+  ).split(','));
+  const hazcardColumn=sheet.headers.findIndex(h=>String(h||'').trim().toLowerCase()==='hazcards label');
+  function linkForCell(c,i,v){
+    if(i===hazcardColumn){
+      const original=String(v||'').trim();
+      const normalized=original.toUpperCase().replace(/\*/g,'').replace(/\.0$/,'').trim();
+      if(!normalized || normalized==='NOT VERIFIED' || normalized==='NOT FOUND IN REFERENCE' || normalized.includes(',') || normalized==='4' || !HAZCARD_LABELS.has(normalized)) return '';
+      return HAZCARDS_WEB_URL+'#card-'+normalized.toLowerCase();
+    }
+    if(c.url) return c.url;
+    if(/^https?:\/\/\S+$/i.test(String(v||'').trim())) return String(v).trim();
+    return '';
+  }
+  // Keep only columns with a useful heading and at least one non-empty value.
+  const activeColumns=sheet.headers.map((h,i)=>({h:String(h||'').trim(),i}))
+    .filter(({h,i})=>h&&!/^Column\s+\d+$/i.test(h)&&sheet.records.some(r=>val(r.cells[i]||{}).trim()!==''));
+  const linkCount=sheet.records.reduce((n,r)=>n+r.cells.reduce((m,c,i)=>m+(linkForCell(c,i,val(c).trim())?1:0),0),0);
+  $('recordTotal').textContent=sheet.records.length.toLocaleString();
+  $('linkTotal').textContent=linkCount.toLocaleString();
+  activeColumns.forEach(({h,i})=>{const o=document.createElement('option');o.value=String(i);o.textContent=h;fieldFilter.appendChild(o);});
+  function render(){
+    const q=search.value.trim().toLocaleLowerCase(), chosen=fieldFilter.value, mode=linkFilter.value;
+    const rows=sheet.records.filter(r=>{
+      const hasLinks=r.cells.some((c,i)=>!!linkForCell(c,i,val(c).trim()));
+      if(mode==='linked'&&!hasLinks)return false;
+      if(mode==='unlinked'&&hasLinks)return false;
+      const cells=chosen===''?activeColumns.map(({i})=>r.cells[i]||{value:''}):[r.cells[Number(chosen)]||{value:''}];
+      return !q||cells.some(c=>val(c).toLocaleLowerCase().includes(q)||(c.url||'').toLocaleLowerCase().includes(q));
+    });
+    $('resultCount').textContent=`${rows.length.toLocaleString()} of ${sheet.records.length.toLocaleString()} records`;
+    if(!rows.length){$('tableContainer').innerHTML='<div class="empty">No matching chemicals. Try another search or filter.</div>';return;}
+    const grid=document.createElement('div');grid.className='card-grid';
+    rows.forEach(r=>{
+      const card=document.createElement('article');card.className='chemical-card';
+      const title=document.createElement('div');title.className='card-title';
+      const mainValue=val(r.cells[1]||{}).trim()||'Chemical record';
+      const titleText=document.createElement('strong');titleText.textContent=mainValue;title.appendChild(titleText);
+      const idValue=val(r.cells[0]||{}).trim();
+      if(idValue){const sub=document.createElement('span');sub.textContent='ID / Label: '+idValue;title.appendChild(sub);}
+      card.appendChild(title);
+      const fields=document.createElement('div');fields.className='card-fields';
+      activeColumns.filter(({i})=>i!==1&&i!==0).forEach(({h,i})=>{
+        const c=r.cells[i]||{value:''},v=val(c).trim();if(!v&&!c.url)return;
+        const name=document.createElement('div');name.className='field-name';name.textContent=h;
+        const value=document.createElement('div');value.className='field-value';
+        const url=linkForCell(c,i,v);
+        if(url){const a=document.createElement('a');a.href=url;a.textContent=v||url;a.target='_blank';a.rel='noopener noreferrer';value.appendChild(a);}
+        else value.textContent=v;
+        fields.append(name,value);
+      });
+      card.appendChild(fields);grid.appendChild(card);
+    });
+    $('tableContainer').replaceChildren(grid);
+  }
+  search.addEventListener('input',render);fieldFilter.addEventListener('change',render);linkFilter.addEventListener('change',render);render();
+})();
+</script>
+</body>
+</html>
