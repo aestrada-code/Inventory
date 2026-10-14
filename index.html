@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Searchable High School Science inventory, including chemical, equipment, supplies, kits, and Vernier resources.">
+<title>HS Science Inventory</title>
+<style>
+:root{--navy:#142b4a;--blue:#245b8f;--sky:#eaf2f9;--ink:#182433;--muted:#66758a;--line:#dbe3ec;--paper:#fff;--bg:#f4f7fb;--accent:#e5a93d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,#142b4a,#245b8f);color:white;padding:30px clamp(18px,4vw,54px) 26px}
+header .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.76rem;font-weight:700;color:#c9dced}
+h1{margin:.3rem 0;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.12}
+header p{max-width:850px;margin:.6rem 0 0;color:#e0eaf4}
+main{max-width:1500px;margin:auto;padding:22px clamp(12px,2.5vw,32px) 50px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.stat strong{display:block;font-size:1.45rem;color:var(--navy)}.stat span{color:var(--muted);font-size:.86rem}
+.controls{background:white;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;display:grid;grid-template-columns:minmax(200px,2fr) minmax(150px,1fr) minmax(130px,1fr);gap:12px}
+label{display:block;font-size:.8rem;color:var(--muted);font-weight:700;margin-bottom:5px}
+input,select{font:inherit;color:var(--ink);width:100%;padding:11px 12px;border:1px solid #cbd6e2;border-radius:9px;background:white;outline-color:var(--blue)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:3px 0 12px;margin-bottom:4px}
+.tab{border:1px solid var(--line);background:white;color:var(--navy);border-radius:999px;padding:9px 14px;white-space:nowrap;cursor:pointer;font-weight:650}
+.tab[aria-selected="true"]{background:var(--navy);color:white;border-color:var(--navy)}
+.table-wrap{background:white;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.table-head{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
+.table-head h2{font-size:1.05rem;margin:0;color:var(--navy)}#resultCount{color:var(--muted);font-size:.88rem}
+.table-scroll{overflow:auto;max-height:68vh}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:.88rem}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid #e9eef4;min-width:115px;max-width:360px;overflow-wrap:anywhere}
+th{position:sticky;top:0;background:#eef3f8;color:#31445a;font-size:.78rem;text-transform:uppercase;letter-spacing:.035em;z-index:1}
+td:first-child,th:first-child{min-width:54px}
+tbody tr:hover{background:#f8fbfe}tbody tr:last-child td{border-bottom:0}
+a{color:#175d9a;text-decoration:underline;text-underline-offset:2px}a:hover{color:#0c3761}
+.empty{padding:34px;text-align:center;color:var(--muted)}
+footer{color:var(--muted);font-size:.82rem;margin:15px 2px}
+.note{font-size:.84rem;color:var(--muted);margin:0 0 14px}
+@media(max-width:720px){.stats{grid-template-columns:1fr}.controls{grid-template-columns:1fr}.table-scroll{max-height:65vh}.table-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Science department · Resource directory</div>
+  <h1>HS Science Inventory</h1>
+  <p>A searchable directory of laboratory chemicals, kits, supplies, equipment, classroom inventories, and Vernier resources. Links from the original workbook are retained wherever available.</p>
+</header>
+<main>
+  <section class="stats" aria-label="Inventory summary">
+    <div class="stat"><strong id="sheetTotal">—</strong><span>Inventory sections</span></div>
+    <div class="stat"><strong id="itemTotal">—</strong><span>Listed records</span></div>
+    <div class="stat"><strong id="linkTotal">—</strong><span>Clickable links</span></div>
+  </section>
+  <p class="note">For chemical handling and safety, use the current container label, Safety Data Sheet (SDS), and complete Hazcard. This directory is an inventory reference, not a substitute for approved safety procedures.</p>
+  <section class="controls" aria-label="Search and filters">
+    <div><label for="search">Search all visible fields</label><input id="search" type="search" placeholder="e.g. copper sulfate, sensor, HS 306…"></div>
+    <div><label for="fieldFilter">Filter by field</label><select id="fieldFilter"><option value="">All fields</option></select></div>
+    <div><label for="linkFilter">Link status</label><select id="linkFilter"><option value="all">All records</option><option value="linked">Records with links</option><option value="unlinked">Records without links</option></select></div>
+  </section>
+  <nav id="tabs" class="tabs" aria-label="Inventory sections"></nav>
+  <section class="table-wrap">
+    <div class="table-head"><h2 id="sectionTitle">Loading inventory…</h2><span id="resultCount" aria-live="polite"></span></div>
+    <div class="table-scroll" id="tableContainer"><div class="empty">Loading inventory data…</div></div>
+  </section>
+  <footer>Built from the supplied HS – SCIENCE Inventory workbook. Use the section tabs to browse, search to find items, and click linked cells to open the original resource.</footer>
+</main>
+<script src="inventory-data.js"></script>
+<script>
+(() => {
+  const data = window.INVENTORY_DATA || [];
+  let active = 0;
+  const $ = id => document.getElementById(id);
+  const tabs = $('tabs'), search = $('search'), fieldFilter = $('fieldFilter'), linkFilter = $('linkFilter');
+  const allRecords = data.reduce((n,s)=>n+s.records.length,0);
+  const allLinks = data.reduce((n,s)=>n+s.records.reduce((m,r)=>m+r.cells.filter(c=>c.url).length,0),0);
+  $('sheetTotal').textContent = data.length;
+  $('itemTotal').textContent = allRecords.toLocaleString();
+  $('linkTotal').textContent = allLinks.toLocaleString();
+
+  data.forEach((sheet,i) => {
+    const b=document.createElement('button');
+    b.className='tab'; b.type='button'; b.textContent=sheet.name;
+    b.setAttribute('aria-selected',String(i===active));
+    b.addEventListener('click',()=>{active=i;renderTabs();populateFields();renderTable();});
+    tabs.appendChild(b);
+  });
+  function renderTabs(){[...tabs.children].forEach((b,i)=>b.setAttribute('aria-selected',String(i===active)));}
+  function populateFields(){
+    const sheet=data[active], old=fieldFilter.value;
+    fieldFilter.innerHTML='<option value="">All fields</option>';
+    sheet.headers.forEach((h,i)=>{if(h && !/^Column \d+$/.test(h)){const o=document.createElement('option');o.value=String(i);o.textContent=h;fieldFilter.appendChild(o);}});
+    if([...fieldFilter.options].some(o=>o.value===old))fieldFilter.value=old;
+  }
+  function cellText(cell){return cell.value===null||cell.value===undefined?'':String(cell.value);}
+  function renderTable(){
+    const sheet=data[active], query=search.value.trim().toLocaleLowerCase(), chosen=fieldFilter.value, linkMode=linkFilter.value;
+    $('sectionTitle').textContent=sheet.name;
+    const filtered=sheet.records.filter(record=>{
+      const cells=record.cells;
+      if(linkMode==='linked'&&!cells.some(c=>c.url))return false;
+      if(linkMode==='unlinked'&&cells.some(c=>c.url))return false;
+      const relevant=chosen===''?cells:[cells[Number(chosen)]||{value:''}];
+      return !query||relevant.some(c=>cellText(c).toLocaleLowerCase().includes(query));
+    });
+    $('resultCount').textContent=`${filtered.length.toLocaleString()} of ${sheet.records.length.toLocaleString()} records`;
+    if(!filtered.length){$('tableContainer').innerHTML='<div class="empty">No matching records. Try another search or filter.</div>';return;}
+    const table=document.createElement('table'), thead=document.createElement('thead'), tr=document.createElement('tr');
+    const rowHead=document.createElement('th');rowHead.textContent='Excel row';tr.appendChild(rowHead);
+    sheet.headers.forEach(h=>{const th=document.createElement('th');th.textContent=h;tr.appendChild(th);});
+    thead.appendChild(tr);table.appendChild(thead);
+    const tbody=document.createElement('tbody');
+    filtered.forEach(record=>{
+      const row=document.createElement('tr'), num=document.createElement('td');num.textContent=record.row;row.appendChild(num);
+      sheet.headers.forEach((h,i)=>{
+        const td=document.createElement('td'), cell=record.cells[i]||{value:''}, val=cellText(cell);
+        if(cell.url){
+          const a=document.createElement('a');a.href=cell.url;a.textContent=val||cell.url;a.target='_blank';a.rel='noopener noreferrer';td.appendChild(a);
+        }else if(/^https?:\/\/\S+$/i.test(val)){
+          const a=document.createElement('a');a.href=val;a.textContent=val;a.target='_blank';a.rel='noopener noreferrer';td.appendChild(a);
+        }else{
+          td.textContent=val;
+        }
+        row.appendChild(td);
+      });
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    const container=$('tableContainer');container.replaceChildren(table);
+  }
+  search.addEventListener('input',renderTable);
+  fieldFilter.addEventListener('change',renderTable);
+  linkFilter.addEventListener('change',renderTable);
+  populateFields();renderTable();
+})();
+</script>
+</body>
+</html>
