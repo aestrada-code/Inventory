@@ -1,5 +1,43 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Chemical Inventory | HS Science Department</title><style>
-:root{--navy:#17365d;--muted:#617084;--line:#dce4ec;--bg:#f5f7fa;--white:#fff;--black:#000;}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--black)}header{background:var(--navy);color:white;padding:30px max(22px,calc((100% - 1250px)/2)) 28px}.eyebrow{text-transform:uppercase;letter-spacing:.09em;font-size:.76rem;opacity:.8}h1{margin:8px 0;font-size:2rem}header p{margin:0;max-width:850px;line-height:1.55;color:#d0e1f2}main{max-width:1250px;margin:22px auto;padding:0 18px}.summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}.pill{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:flex;gap:8px;align-items:baseline}.pill strong{font-size:1.25rem;color:var(--navy)}.controls{display:grid;grid-template-columns:minmax(220px,2fr) repeat(2,minmax(180px,1fr));gap:12px;background:white;padding:16px;border:1px solid var(--line);border-radius:14px;margin-bottom:18px}.controls label{display:block;font-size:.8rem;font-weight:bold;color:#43556b;margin-bottom:6px}input,select{width:100%;padding:10px 11px;border:1px solid #c5d0dd;border-radius:8px;background:white;font:inherit}.notice{font-size:.85rem;line-height:1.5;color:#536477;background:#fff8e7;border:1px solid #f1dfaa;border-radius:10px;padding:12px 14px}.table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0 14px}.table-head h2{font-size:1.2rem;margin:0;color:var(--navy)}#resultCount{color:var(--muted);font-size:.88rem}.category-section{margin:25px 0}..category-heading{
+:root{--navy:#17365d;--muted:#617084;--line:#dce4ec;--bg:#f5f7fa;--white:#fff;--black:#000;}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Arial,Helvetica,sans-serif;color:var(--black)}header{
+  background:linear-gradient(135deg,#0f172a,#1e3a8a);
+  color:#fff;
+  padding:34px;
+  border-radius:24px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 18px 50px #0f172a22
+}
+
+header:after{
+  content:"🧬  ⚗️  🔬";
+  position:absolute;
+  right:28px;
+  bottom:18px;
+  font-size:42px;
+  opacity:.22;
+  letter-spacing:14px
+}
+
+h1{
+  font-size:clamp(28px,4vw,52px);
+  margin:0 0 8px;
+  letter-spacing:-1.5px
+}
+
+.subtitle{
+  color:#dbeafe;
+  max-width:800px;
+  line-height:1.6
+}
+
+.toolbar{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:12px;
+  margin:22px 0
+}
+  .pill strong{font-size:1.25rem;color:var(--navy)}.controls{display:grid;grid-template-columns:minmax(220px,2fr) repeat(2,minmax(180px,1fr));gap:12px;background:white;padding:16px;border:1px solid var(--line);border-radius:14px;margin-bottom:18px}.controls label{display:block;font-size:.8rem;font-weight:bold;color:#43556b;margin-bottom:6px}input,select{width:100%;padding:10px 11px;border:1px solid #c5d0dd;border-radius:8px;background:white;font:inherit}.notice{font-size:.85rem;line-height:1.5;color:#536477;background:#fff8e7;border:1px solid #f1dfaa;border-radius:10px;padding:12px 14px}.table-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0 14px}.table-head h2{font-size:1.2rem;margin:0;color:var(--navy)}#resultCount{color:var(--muted);font-size:.88rem}.category-section{margin:25px 0}..category-heading{
   background:#fff;
   color:#175d9a;
   padding:12px 15px;
